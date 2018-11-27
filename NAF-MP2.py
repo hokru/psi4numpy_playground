@@ -112,9 +112,20 @@ Nbar=np.resize(Nbar,(naux2,naux))
 print(' computing new Qov ')
 Qov_bar=np.dot(Nbar,J)
 print('shape Jbar :',Qov_bar.shape)
-Qov=np.reshape(Qov_bar,(naux2,ndocc,nvirt))  # can i do this?
+Qov=np.zeros((naux2,ndocc,nvirt))
+#rebuild 3-index Qov
+# numpy solution?
+# Qov=np.reshape(Qov_bar,(naux2,ndocc,nvirt))  # can i do this?
+for q in range(naux2):
+    for i in range(ndocc):
+        for a in range(nvirt):
+            qia=(q,i,a)
+            idx=np.unravel_index(np.ravel_multi_index(qia,Qov.shape), Qov_bar.shape ) 
+            # print(idx)
+            Qov[q,i,a]=Qov_bar[idx]
+
+# print(Qov)
 print('shape Qov:',Qov.shape)
-#print(Qov)
 
 print('\nComputing MP2 energy...')
 t = time.time()
@@ -135,10 +146,14 @@ MP2corr_SS = 0.0
 for i in range(ndocc):
     eps_i = eps_occ[i]
     i_Qv = Qov[:, i, :].copy()
+#    idx= np.unravel_index(np_ravel_multi_index( (:,i,:),(naux2,ndocc,nvirt)))
+#    i_Qv = Qov[idx]
     for j in range(i, ndocc):
 
         eps_j = eps_occ[j]
         j_Qv = Qov[:, j, :]
+#        idx= np.unravel_index(np_ravel_multi_index((:,j,:),(naux2,ndocc,nvirt)))
+#        j_Qv = Qov[idx]
 
         # We can either use einsum here
 #        tmp = np.einsum('Qa,Qb->ab', i_Qv, j_Qv)
