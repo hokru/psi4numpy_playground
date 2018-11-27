@@ -1,5 +1,7 @@
 """
 A reference implementation of density-fitted MP2 from a RHF reference.
+with added simple NAF approximiation
+http://aip.scitation.org/doi/10.1063/1.4905005
 
 References: 
 Algorithm modified from Rob Parrish's most excellent Psi4 plugin example
