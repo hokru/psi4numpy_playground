@@ -76,7 +76,7 @@ print('...Qov build in %.3f seconds with a shape of %s, %.3f GB.' \
 
 # NAF start
 #  calculate W Matrix = W=Jt*J 
-print('NAF...')
+print(' ** NAF  **')
 naux=aux.nbf()
 print('computing W matrix with dimension naux = %i' %(naux))
 # reshape to form J (Q|ia)
@@ -86,36 +86,38 @@ J =np.reshape(Qov,(naux,nvirt*ndocc))
 W=np.dot(J,J.T) 
 
 print('diagonalization of W ')
+#e_val,e_vec=np.linalg.eig(W)
 e_val,e_vec=np.linalg.eigh(W)
 #  construct modified Qov matrix Nbar=(Qbar|Q) from selected eigenvectors of W
-print(' selecting eigenvectors ')
-ethr=1e-5
+print('selecting eigenvectors ')
+ethr=1e-12
 nskipped=0
 Nbar=np.zeros((naux,naux))
 niter=0
 naux2=0
 
-# sanity check: For Nbar=e_vec without screening result is OK.
+# sanity check if transformations are OK
 for n in range(naux):
-#   print(e_val[n])
-#   Nbar[naux2,:]=e_vec[n,:]
-#   naux2+=1
+   Nbar[naux2,:]=e_vec[n,:]
+   naux2+=1
+
+naux2=0
+for n in range(naux):
     if(e_val[n]>=ethr):
         Nbar[naux2,:]=e_vec[n,:]
         naux2+=1
 
+#naux2=naux-50
 # resizing Nbar. 
-#print(Nbar)
 print('new naux = %i  ' % (naux2))
 Nbar=np.resize(Nbar,(naux2,naux))
-#print(Nbar)
 
 # eq.6 Qov_bar=Jbar=(Qbar|ia)=(Qbar|Q)*(Q|ia)
-print(' computing new Qov ')
+print('computing new Qov ')
 Qov_bar=np.dot(Nbar,J)
 print('shape Jbar :',Qov_bar.shape)
 Qov=np.zeros((naux2,ndocc,nvirt))
-#rebuild 3-index Qov
+# rebuild 3-index Qov
 # numpy solution?
 # Qov=np.reshape(Qov_bar,(naux2,ndocc,nvirt))  # can i do this?
 for q in range(naux2):
@@ -123,7 +125,7 @@ for q in range(naux2):
         for a in range(nvirt):
             qia=(q,i,a)
             idx=np.unravel_index(np.ravel_multi_index(qia,Qov.shape), Qov_bar.shape ) 
-            # print(idx)
+#            print(qia,idx)
             Qov[q,i,a]=Qov_bar[idx]
 
 # print(Qov)
@@ -148,14 +150,10 @@ MP2corr_SS = 0.0
 for i in range(ndocc):
     eps_i = eps_occ[i]
     i_Qv = Qov[:, i, :].copy()
-#    idx= np.unravel_index(np_ravel_multi_index( (:,i,:),(naux2,ndocc,nvirt)))
-#    i_Qv = Qov[idx]
     for j in range(i, ndocc):
 
         eps_j = eps_occ[j]
         j_Qv = Qov[:, j, :]
-#        idx= np.unravel_index(np_ravel_multi_index((:,j,:),(naux2,ndocc,nvirt)))
-#        j_Qv = Qov[idx]
 
         # We can either use einsum here
 #        tmp = np.einsum('Qa,Qb->ab', i_Qv, j_Qv)
