@@ -76,21 +76,21 @@ print("W  = (Q|Q) dim:", W.shape)
 # epsilon threshold is supposed to be in the range of 10^-2 to 10^-4 ?
 e_val, e_vec = np.linalg.eigh(W)
 # print(e_val)
-eps = 1e-2
+eps = 1e-1
 print(eps)
 nskipped = 0
 Ntmp = np.zeros((naux, naux))
 naux2 = 0
 for n in range(naux):
     if (abs(e_val[n]) > eps):
-        print(e_val[n])
+        # print(e_val[n])
         Ntmp[:, naux2] = e_vec[:, n]
         naux2 += 1
 
 
 print('retaining new naux = %i  of  %i [ %4.1f %% ]' % (naux2,naux,naux2/naux*100.0))
 Nbar = Ntmp[0:naux, 0:naux2]
-Nbar=e_vec
+# Nbar=e_vec
 print("N^bar  = (Q^bar|Q) dim)",Nbar.shape)
 
 # form N'(bar) = L * N(bar)
@@ -124,7 +124,7 @@ Cvirt = C[:, ndocc:]
 print(' ** MP2  **')
 # transform J(bar) = Qso -> Qov
 # expant J(bar) to proper dimensions
-Qpq = Jbar.T.reshape(naux,norb,norb) # can i do this?
+Qpq = Jbar.T.reshape(naux2,norb,norb) # can i do this?
 # print(Qpq.shape)
 
 # Normal construction
@@ -204,4 +204,4 @@ print('NAF-DF-MP2 finished in %.3f s' \
 e=psi4.energy('mp2')
 print('REF(MP2) %f' % (e))
 ecorr = psi4.core.get_variable('MP2 CORRELATION ENERGY')
-print('reference Ecorr(MP2) = %f ; error = %f ' % (ecorr, ecorr - mp2_corr))
+print('reference Ecorr(MP2) = %f ; error = %.3e ' % (ecorr, ecorr - mp2_corr))
