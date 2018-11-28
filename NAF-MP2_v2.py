@@ -1,3 +1,7 @@
+# DF-MP2
+# with added NAF rank-reduction
+# http://aip.scitation.org/doi/10.1063/1.4905005
+
 import time
 import numpy as np
 np.set_printoptions(precision=5, linewidth=200, suppress=True)
@@ -24,17 +28,21 @@ symmetry c1
 """)
 
 # Basis used in mp2 density fitting
-#psi4.set_options({'basis': 'cc-pVDZ',
-#                  'df_basis_scf': 'cc-pvdz-ri'})
+psi4.set_options({'basis': 'cc-pVDZ',
+                 'df_basis_mp2': 'cc-pvtz-ri'})
 
-psi4.set_options({'basis': 'minix', 'df_basis_mp2': 'cc-pVDZ-RI'})
+# psi4.set_options({'basis': 'def2-SVP', 'df_basis_mp2': 'cc-pVDZ-RI'})
+# HF energy and orbitals
+print(' ** RHF  **')
+RHF_E, RHFwfn = psi4.energy('SCF', return_wfn=True)
+
 t = time.time()
 # wavefunction object
 wfn = psi4.core.Wavefunction.build(mol, psi4.core.get_global_option('basis'))
 orb = wfn.basisset()
 norb = orb.nbf()
 
-aux = psi4.core.BasisSet.build(mol, "DF_BASIS_MP2", "", "RIFIT", "cc-pVDZ-RI")
+aux = psi4.core.BasisSet.build(mol, "DF_BASIS_MP2", "", "RIFIT", psi4.core.get_global_option('df_basis_mp2'))
 naux = aux.nbf()
 
 # Build instance of MintsHelper
@@ -76,7 +84,7 @@ print("W  = (Q|Q) dim:", W.shape)
 # epsilon threshold is supposed to be in the range of 10^-2 to 10^-4 ?
 e_val, e_vec = np.linalg.eigh(W)
 # print(e_val)
-eps = 1e-1
+eps = 1e-2
 print(eps)
 nskipped = 0
 Ntmp = np.zeros((naux, naux))
@@ -101,9 +109,7 @@ print("N'^bar  = (P^bar|Q) dim)",Npbar.shape)
 Jbar =  np.dot(Ppq,Npbar)
 print("J^bar  = (pq|Q) dim)",Npbar.shape)
 
-# HF energy and orbitals
-print(' ** RHF  **')
-RHF_E, RHFwfn = psi4.energy('SCF', return_wfn=True)
+
 
 # Grab data from Wavfunction clas
 ndocc = RHFwfn.nalpha()
@@ -122,16 +128,16 @@ Cvirt = C[:, ndocc:]
 
 # MP2 energy
 print(' ** MP2  **')
-# transform J(bar) = Qso -> Qov
-# expant J(bar) to proper dimensions
-Qpq = Jbar.T.reshape(naux2,norb,norb) # can i do this?
+# DF MO Tensor: transform J(bar) = Qso -> Qov
+# expand J(bar) to proper dimensions
+Qpq = Jbar.T.reshape(naux2,norb,norb) 
 # print(Qpq.shape)
 
 # Normal construction
 # metric = mints.ao_eri(zero_bas, aux, zero_bas, aux)
 # metric.power(-0.5, 1.e-14)
 # J =  np.dot(Ppq,metric)
-# Qpq = J.T.reshape(naux,norb,norb) # can i do this?
+# Qpq = J.T.reshape(naux,norb,norb) 
 
 # ==> Transform Qpq -> Qmo @ O(N^4) <==
 Qmo = np.einsum('pi,Qpq->Qiq', C, Qpq)
@@ -201,7 +207,10 @@ print('NAF-DF-MP2 finished in %.3f s' \
 % (time.time() - t))
 
  # ==> Compare to Psi4 <==
-e=psi4.energy('mp2')
+e=psi4.energy('mp2',ref_wfn=RHFwfn)
 print('REF(MP2) %f' % (e))
 ecorr = psi4.core.get_variable('MP2 CORRELATION ENERGY')
+t=time.time()
 print('reference Ecorr(MP2) = %f ; error = %.3e ' % (ecorr, ecorr - mp2_corr))
+print('PSI4 DF-MP2 finished in %.3f s' \
+% (time.time() - t))
