@@ -54,7 +54,7 @@ symmetry c1
 #psi4.set_options({'basis': 'cc-pVDZ',
 #                  'df_basis_scf': 'cc-pvdz-ri'})
 
-psi4.set_options({'basis': 'minix', 'df_basis_scf': 'def2-SVP-RI'})
+psi4.set_options({'basis': 'minix', 'df_basis_scf': 'cc-pvdz-RI'})
 check_energy = False
 #check_energy = True
 
@@ -76,7 +76,7 @@ eps_vir = np.asarray(wfn.epsilon_a_subset("AO", "ACTIVE_VIR"))
 print('\nBuilding DF ERI tensor Qov...')
 t = time.time()
 C = wfn.Ca()
-aux = psi4.core.BasisSet.build(mol, "DF_BASIS_MP2", "", "RIFIT", "aug-cc-pvdz")
+aux = psi4.core.BasisSet.build(mol, "DF_BASIS_MP2", "", "RIFIT", "cc-pvdz")
 df = psi4.core.DFTensor(wfn.basisset(), aux, C, ndocc, nvirt)
 # Transformed MO DF tensor
 Qov = np.asarray(df.Qov())
@@ -96,6 +96,7 @@ W = np.dot(J, J.T)
 
 print('diagonalization of W ')
 e_val, e_vec = np.linalg.eigh(W)
+print(e_val)
 #  construct modified Qov matrix Nbar=(Qbar|Q) from selected eigenvectors of W
 print('selecting eigenvectors ')
 # ethr threshold is supposed to be 10^-4 ???
